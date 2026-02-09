@@ -3,97 +3,103 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>歴史年号・真剣勝負 & 暗記カード</title>
+    <title>歴史年号・真剣勝負</title>
     <style>
         :root {
             --primary: #d32f2f;
             --hp-fill: #4caf50;
-            --accent: #ff9800;
-            --panel-bg: rgba(0, 0, 0, 0.9);
+            --accent: #d4af37; /* 鈍色・金 */
+            --panel-bg: rgba(15, 15, 15, 0.95);
+            --text: #f0f0f0;
         }
         * { box-sizing: border-box; touch-action: manipulation; }
         body {
-            font-family: 'Hiragino Mincho ProN', serif;
-            background-color: #000; margin: 0;
+            font-family: "Yu Mincho", "YuMincho", "Hiragino Mincho ProN", serif;
+            background-color: #050505; margin: 0;
             display: flex; justify-content: center; align-items: center;
-            height: 100dvh; overflow: hidden; color: #eee;
+            height: 100dvh; overflow: hidden; color: var(--text);
         }
         #main-wrapper {
             width: 100%; max-width: 450px; height: 100%;
-            background: linear-gradient(to bottom, #1a2a3a, #000);
+            background: radial-gradient(circle at center, #2c1a1a 0%, #000 100%);
             position: relative; display: flex; flex-direction: column;
+            border-left: 1px solid #333; border-right: 1px solid #333;
         }
 
         /* 共通レイヤー */
         .overlay-screen {
             position: absolute; inset: 0; background: var(--panel-bg);
             z-index: 100; display: flex; flex-direction: column;
-            justify-content: center; align-items: center; padding: 20px; text-align: center;
+            justify-content: center; align-items: center; padding: 30px; text-align: center;
         }
-        .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%; }
+        .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; width: 100%; }
         .select-btn {
-            background: #333; color: white; border: 2px solid #555;
-            padding: 18px 5px; font-size: 1.1rem; border-radius: 8px; font-family: inherit;
+            background: #222; color: var(--text); border: 1px solid var(--accent);
+            padding: 15px 5px; font-size: 1rem; border-radius: 4px; font-family: inherit;
+            transition: all 0.2s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.5);
         }
-        .select-btn:active { background: var(--primary); border-color: #fff; }
-        .full-width { grid-column: span 2; background: #442222; }
+        .select-btn:active { background: var(--accent); color: #000; }
+        .full-width { grid-column: span 2; }
+        .main-menu-btn { height: 80px; font-size: 1.3rem; font-weight: bold; border-width: 2px; }
 
         /* バトル専用UI */
         .status-bar {
-            flex: 0 0 65px; display: flex; justify-content: space-between;
-            align-items: center; padding: 5px 15px; background: rgba(0,0,0,0.5);
+            flex: 0 0 70px; display: flex; justify-content: space-between;
+            align-items: center; padding: 10px 20px; background: linear-gradient(to bottom, #000, transparent);
         }
-        .hp-container { width: 45%; }
+        .hp-container { width: 42%; }
         .hp-bar { 
-            height: 22px; background: #222; border: 2px solid #fff; 
-            border-radius: 11px; overflow: hidden;
+            height: 14px; background: #222; border: 1px solid var(--accent); 
+            border-radius: 7px; overflow: hidden; margin-top: 4px;
         }
-        .hp-fill { height: 100%; width: 100%; background: var(--hp-fill); transition: width 0.3s; }
-        .label { font-size: 12px; font-weight: bold; margin-bottom: 2px; display: block; }
+        .hp-fill { height: 100%; width: 100%; background: var(--hp-fill); transition: width 0.4s ease-out; }
+        .label { font-size: 11px; letter-spacing: 1px; color: var(--accent); }
 
-        #battle-stage { flex: 0 0 100px; position: relative; display: flex; justify-content: center; align-items: flex-end; }
+        #battle-stage { flex: 0 0 120px; position: relative; display: flex; justify-content: center; align-items: flex-end; }
         #enemy-samurai {
-            width: 100px; height: 100px;
-            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M50 5 Q40 5 35 15 L40 25 L30 35 Q20 55 30 95 L70 95 Q80 55 70 35 L60 25 L65 15 Q60 5 50 5 Z" fill="black"/></svg>') no-repeat bottom center;
+            width: 120px; height: 120px;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M50 5 L30 30 L35 40 L25 50 Q15 70 30 95 L70 95 Q85 70 75 50 L65 40 L70 30 Z" fill="black" stroke="%23333" stroke-width="1"/></svg>') no-repeat bottom center;
             background-size: contain; animation: sway 4s ease-in-out infinite;
         }
-        @keyframes sway { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+        @keyframes sway { 0%, 100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-8px) scale(1.02); } }
+        
         #slash {
-            position: absolute; top: 40%; left: 0; width: 0%; height: 8px;
-            background: #fff; box-shadow: 0 0 20px 8px #fff; transform: rotate(-15deg); z-index: 10;
+            position: absolute; top: 50%; left: -10%; width: 0%; height: 4px;
+            background: #fff; box-shadow: 0 0 15px 5px #fff; transform: rotate(-20deg); z-index: 10;
         }
-        .slash-anim { animation: slash-effect 0.4s ease-out forwards; }
-        @keyframes slash-effect { 0% { width: 0%; opacity: 1; } 100% { width: 100%; opacity: 0; } }
+        .slash-anim { animation: slash-effect 0.3s ease-out forwards; }
+        @keyframes slash-effect { 0% { width: 0%; opacity: 1; } 100% { width: 120%; opacity: 0; } }
 
-        .ui-mid { flex: 0 0 auto; background: rgba(0,0,0,0.7); padding: 10px 15px; text-align: center; }
-        #timer-gauge { width: 100%; height: 8px; background: #222; margin-bottom: 10px; border-radius: 4px; }
-        #timer-fill { width: 100%; height: 100%; background: var(--accent); border-radius: 4px; }
-        #event-name { font-size: 1.4rem; font-weight: bold; color: #fff; margin-bottom: 4px; min-height: 3.2rem; display: flex; align-items: center; justify-content: center; }
-        #hint-text { color: var(--accent); font-size: 1.1rem; font-weight: bold; height: 1.4rem; margin-bottom: 5px; opacity: 0; }
-        #input-display { font-size: 3rem; font-weight: bold; letter-spacing: 10px; color: #fff; height: 3.5rem; border-bottom: 2px solid #444; margin: 0 40px; }
+        .ui-mid { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 10px 20px; }
+        #timer-gauge { width: 100%; height: 4px; background: #222; border-radius: 2px; margin-bottom: 15px; overflow: hidden;}
+        #timer-fill { width: 100%; height: 100%; background: var(--accent); }
+        #event-name { font-size: 1.5rem; font-weight: bold; min-height: 4rem; display: flex; align-items: center; justify-content: center; line-height: 1.3; }
+        #hint-text { color: var(--accent); font-size: 0.95rem; height: 1.2rem; margin-bottom: 10px; opacity: 0; transition: 0.5s; }
+        #input-display { font-size: 3.5rem; font-weight: bold; letter-spacing: 8px; height: 4.5rem; border-bottom: 1px solid var(--accent); text-align: center; margin-bottom: 10px; }
 
-        .keypad { flex: 1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 15px; background: #111; }
+        .keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 15px; background: #000; border-top: 1px solid #222; }
         .key {
-            background: #444; color: #fff; border: none; border-radius: 12px;
-            font-size: 1.8rem; font-weight: bold; display: flex; justify-content: center; align-items: center;
-            box-shadow: 0 5px 0 #000;
+            background: #1a1a1a; color: #fff; border: 1px solid #333; border-radius: 8px;
+            font-size: 1.6rem; padding: 15px 0; font-family: serif;
         }
-        .key:active { transform: translateY(4px); box-shadow: none; background: #666; }
-        .key.ok { background: var(--primary); font-size: 2rem; box-shadow: 0 5px 0 #600; }
-        .key.c { background: #666; }
+        .key:active { background: #333; color: var(--accent); }
+        .key.ok { background: #422; border-color: var(--primary); color: #fff; }
+        .key.c { color: #888; }
 
-        /* フラッシュカード専用UI */
+        /* フラッシュカード */
         #fc-card { 
-            width: 90%; height: 60%; background: #eee; color: #333; border-radius: 20px;
+            width: 100%; height: 320px; background: #fdfdfd; color: #1a1a1a; border-radius: 8px;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            padding: 20px; cursor: pointer; border: 5px solid #888;
+            padding: 20px; cursor: pointer; border-bottom: 6px solid #ccc;
+            background-image: radial-gradient(#eee 1px, transparent 1px); background-size: 20px 20px;
         }
-        #fc-year { font-size: 5rem; font-weight: bold; margin: 0; }
-        #fc-goro { font-size: 1.8rem; color: var(--primary); font-weight: bold; margin: 20px 0; min-height: 2rem; }
-        #fc-event { font-size: 1.5rem; font-weight: bold; color: #1a2a3a; text-align: center; }
+        #fc-year { font-size: 4.5rem; font-weight: bold; margin: 0; color: #000; }
+        #fc-goro { font-size: 1.4rem; color: var(--primary); font-weight: bold; margin: 15px 0; min-height: 1.6rem; border-top: 1px dashed #ccc; padding-top: 10px; width: 100%; }
+        #fc-event { font-size: 1.4rem; font-weight: bold; color: #333; }
 
-        .damage-flash { animation: flash-red 0.3s; }
-        @keyframes flash-red { 50% { background: rgba(255, 0, 0, 0.6); } }
+        .damage-flash { animation: flash-red 0.4s; }
+        @keyframes flash-red { 50% { background: rgba(211, 47, 47, 0.4); } }
         .hidden { display: none !important; }
     </style>
 </head>
@@ -101,43 +107,43 @@
 
 <div id="main-wrapper">
     <div id="mode-screen" class="overlay-screen">
-        <h1 style="color:var(--accent);">修行の道を選べ</h1>
-        <button class="select-btn full-width" style="height:100px; font-size:1.5rem;" onclick="selectMode('battle')">⚔️ 侍バトル (実戦)</button>
-        <button class="select-btn full-width" style="height:100px; font-size:1.5rem; background:#2e7d32;" onclick="selectMode('flash')">🎴 暗記カード (修行)</button>
+        <h1 style="color:var(--accent); letter-spacing: 4px; margin-bottom: 40px;">歴史年号・真剣勝負</h1>
+        <button class="select-btn full-width main-menu-btn" onclick="selectMode('battle')">⚔️ 侍バトル (実戦)</button>
+        <div style="height:20px;"></div>
+        <button class="select-btn full-width main-menu-btn" style="border-color:#4caf50;" onclick="selectMode('flash')">🎴 暗記カード (修行)</button>
     </div>
 
     <div id="era-screen" class="overlay-screen hidden">
-        <h2 id="era-title">時代を選択せよ</h2>
+        <h2 style="color:var(--accent); margin-bottom: 25px;">時代を選択せよ</h2>
         <div class="btn-grid">
             <button class="select-btn full-width" onclick="selectEra('all')">全時代</button>
-            <button class="select-btn" onclick="selectEra('古代')">飛鳥・奈良</button>
-            <button class="select-btn" onclick="selectEra('平安')">平安</button>
-            <button class="select-btn" onclick="selectEra('鎌倉')">鎌倉</button>
-            <button class="select-btn" onclick="selectEra('室町')">室町・戦国</button>
-            <button class="select-btn" onclick="selectEra('江戸')">江戸</button>
-            <button class="select-btn" onclick="selectEra('近代')">明治・現代</button>
+            <button class="select-btn" onclick="selectEra('古代')">古代<br><small>旧石器〜平安</small></button>
+            <button class="select-btn" onclick="selectEra('中世')">中世<br><small>鎌倉〜室町</small></button>
+            <button class="select-btn" onclick="selectEra('近世')">近世<br><small>安土桃山〜江戸</small></button>
+            <button class="select-btn" onclick="selectEra('近代')">近代<br><small>明治〜昭和戦前</small></button>
+            <button class="select-btn full-width" onclick="selectEra('現代')">現代<br><small>昭和戦後〜令和</small></button>
         </div>
-        <button class="select-btn full-width" style="margin-top:20px; background:none; border:none;" onclick="location.reload()">← 戻る</button>
+        <button class="select-btn full-width" style="margin-top:30px; border:none; color:#888;" onclick="location.reload()">← 戻る</button>
     </div>
 
     <div id="diff-screen" class="overlay-screen hidden">
-        <h2>難易度を選択せよ</h2>
+        <h2 style="color:var(--accent);">難易度を選択せよ</h2>
         <div class="btn-grid">
-            <button class="select-btn full-width" onclick="startBattle(1)">初級</button>
-            <button class="select-btn full-width" onclick="startBattle(2)">中級</button>
-            <button class="select-btn full-width" onclick="startBattle(3)">上級</button>
+            <button class="select-btn full-width" onclick="startBattle(1)">初級 (基本年号)</button>
+            <button class="select-btn full-width" onclick="startBattle(2)">中級 (標準レベル)</button>
+            <button class="select-btn full-width" onclick="startBattle(3)">上級 (難関入試)</button>
         </div>
     </div>
 
     <div id="game-ui" class="hidden" style="height:100%; display:flex; flex-direction:column;">
         <div class="status-bar">
-            <div class="hp-container"><span class="label">自分</span><div class="hp-bar"><div id="p-hp" class="hp-fill"></div></div></div>
-            <div class="hp-container"><span class="label" style="text-align:right">宿敵</span><div class="hp-bar"><div id="e-hp" class="hp-fill"></div></div></div>
+            <div class="hp-container"><span class="label">自軍</span><div class="hp-bar"><div id="p-hp" class="hp-fill"></div></div></div>
+            <div class="hp-container" style="text-align:right"><span class="label">宿敵</span><div class="hp-bar"><div id="e-hp" class="hp-fill"></div></div></div>
         </div>
         <div id="battle-stage"><div id="slash"></div><div id="enemy-samurai"></div></div>
         <div class="ui-mid">
             <div id="timer-gauge"><div id="timer-fill"></div></div>
-            <div id="event-name">出陣</div>
+            <div id="event-name">出陣の刻...</div>
             <div id="hint-text">💡 ヒント</div>
             <div id="input-display">____</div>
         </div>
@@ -145,52 +151,51 @@
             <button class="key" onclick="tapNum(1)">1</button><button class="key" onclick="tapNum(2)">2</button><button class="key" onclick="tapNum(3)">3</button>
             <button class="key" onclick="tapNum(4)">4</button><button class="key" onclick="tapNum(5)">5</button><button class="key" onclick="tapNum(6)">6</button>
             <button class="key" onclick="tapNum(7)">7</button><button class="key" onclick="tapNum(8)">8</button><button class="key" onclick="tapNum(9)">9</button>
-            <button class="key c" onclick="tapClear()">C</button><button class="key" onclick="tapNum(0)">0</button><button class="key ok" onclick="tapOk()">斬</button>
+            <button class="key c" onclick="tapClear()">消</button><button class="key" onclick="tapNum(0)">0</button><button class="key ok" onclick="tapOk()">斬</button>
         </div>
     </div>
 
-    <div id="flash-ui" class="overlay-screen hidden" style="background:#1a2a3a;">
-        <div id="fc-progress" style="margin-bottom:20px;">0 / 0</div>
+    <div id="flash-ui" class="overlay-screen hidden" style="background:#0a1018;">
+        <div id="fc-progress" style="margin-bottom:15px; font-size: 0.9rem; color: var(--accent);">0 / 0</div>
         <div id="fc-card" onclick="nextFcStep()">
             <p id="fc-year">----</p>
-            <p id="fc-goro" class="hidden">ゴロ</p>
-            <p id="fc-event" class="hidden">出来事</p>
-            <p style="font-size:0.8rem; color:#999; margin-top:30px;">タップで進む</p>
+            <div id="fc-goro" class="hidden">ゴロ</div>
+            <div id="fc-event" class="hidden">出来事</div>
+            <p style="font-size:0.75rem; color:#bbb; margin-top:20px; font-family: sans-serif;">TAP TO REVEAL</p>
         </div>
-        <button class="select-btn" style="margin-top:30px;" onclick="location.reload()">修行を終える</button>
+        <button class="select-btn" style="margin-top:40px; width: 100px; border-color: #555;" onclick="location.reload()">終了</button>
     </div>
 
     <div id="result-screen" class="overlay-screen hidden">
-        <h1 id="res-title" style="font-size:3rem;"></h1>
-        <p id="res-msg" style="font-size:1.4rem;"></p>
-        <button class="key ok" style="padding: 20px 60px; height: auto;" onclick="location.reload()">最初に戻る</button>
+        <h1 id="res-title" style="font-size:2.5rem; color: var(--accent);"></h1>
+        <p id="res-msg" style="font-size:1.2rem; margin-bottom: 40px;"></p>
+        <button class="select-btn full-width main-menu-btn ok" onclick="location.reload()">再戦する</button>
     </div>
 </div>
 
 <script src="questions.js"></script>
 <script>
-    const seKey = new Audio('key.mp3'); const seSlash = new Audio('slash.mp3');
-    const seDamage = new Audio('damage.mp3'); const seOk = new Audio('ok.mp3');
-    
+    // ※ questions.js のデータ構造に合わせて動作します
     let mode = '', selectedEra = '', playerHp = 100, enemyHp = 100;
     let currentIdx = 0, quizList = [], userInput = "", timerInterval, fcStep = 0;
 
-    function playSound(s) { s.currentTime = 0; s.play().catch(()=>{}); }
-
-    function selectMode(m) { playSound(seOk); mode = m; document.getElementById('mode-screen').classList.add('hidden'); document.getElementById('era-screen').classList.remove('hidden'); }
+    function selectMode(m) { mode = m; document.getElementById('mode-screen').classList.add('hidden'); document.getElementById('era-screen').classList.remove('hidden'); }
 
     function selectEra(era) {
-        playSound(seOk); selectedEra = era;
+        selectedEra = era;
         document.getElementById('era-screen').classList.add('hidden');
         if (mode === 'battle') { document.getElementById('diff-screen').classList.remove('hidden'); }
         else { startFlash(); }
     }
 
-    // --- バトル関連 ---
     function startBattle(diff) {
-        playSound(seOk); document.getElementById('diff-screen').classList.add('hidden'); document.getElementById('game-ui').classList.remove('hidden');
-        quizList = masterData.filter(q => (selectedEra === 'all' || q.era === selectedEra) && (selectedEra === 'all' ? true : q.d === diff));
-        if (quizList.length < 5) quizList = masterData.filter(q => q.era === selectedEra || selectedEra === 'all');
+        document.getElementById('diff-screen').classList.add('hidden'); document.getElementById('game-ui').classList.remove('hidden');
+        // 時代フィルタリングのロジック
+        quizList = masterData.filter(q => (selectedEra === 'all' || q.era === selectedEra));
+        // 指定難易度がある場合はさらに絞り込み、なければその時代の全問からランダム
+        let diffQuiz = quizList.filter(q => q.d === diff);
+        if (diffQuiz.length >= 5) quizList = diffQuiz;
+
         quizList = quizList.sort(() => Math.random() - 0.5).slice(0, 10);
         showQuestion();
     }
@@ -207,16 +212,17 @@
 
     function startTimer() {
         clearInterval(timerInterval); let start = Date.now();
+        const duration = 12000; // 12秒
         timerInterval = setInterval(() => {
-            let ratio = 1 - ((Date.now() - start) / 12000);
+            let ratio = 1 - ((Date.now() - start) / duration);
             document.getElementById('timer-fill').style.width = Math.max(0, ratio * 100) + "%";
             if (ratio < 0.5) document.getElementById('hint-text').style.opacity = 1;
             if (ratio <= 0) { clearInterval(timerInterval); processResult(false); }
         }, 50);
     }
 
-    function tapNum(n) { playSound(seKey); if (userInput.length < 4) { userInput += n; renderInput(); } }
-    function tapClear() { playSound(seKey); userInput = ""; renderInput(); }
+    function tapNum(n) { if (userInput.length < 4) { userInput += n; renderInput(); } }
+    function tapClear() { userInput = ""; renderInput(); }
     function renderInput() { document.getElementById('input-display').innerText = userInput || "____"; }
 
     function tapOk() { if (userInput === "") return; clearInterval(timerInterval); processResult(userInput === quizList[currentIdx].y); }
@@ -224,26 +230,24 @@
     function processResult(correct) {
         const slash = document.getElementById('slash'), display = document.getElementById('input-display'), container = document.getElementById('main-wrapper');
         if (correct) {
-            playSound(seSlash); slash.classList.remove('slash-anim'); void slash.offsetWidth; slash.classList.add('slash-anim');
-            enemyHp -= 20; display.style.color = "#4caf50";
+            slash.classList.remove('slash-anim'); void slash.offsetWidth; slash.classList.add('slash-anim');
+            enemyHp -= 20; display.style.color = var(--hp-fill);
         } else {
-            playSound(seDamage); container.classList.add('damage-flash'); setTimeout(() => container.classList.remove('damage-flash'), 300);
-            playerHp -= 25; display.style.color = "#f44336"; display.innerText = quizList[currentIdx].y;
+            container.classList.add('damage-flash'); setTimeout(() => container.classList.remove('damage-flash'), 400);
+            playerHp -= 25; display.style.color = var(--primary); display.innerText = quizList[currentIdx].y;
         }
         document.getElementById('p-hp').style.width = Math.max(0, playerHp) + "%";
         document.getElementById('e-hp').style.width = Math.max(0, enemyHp) + "%";
-        setTimeout(() => { currentIdx++; showQuestion(); }, 1300);
+        setTimeout(() => { currentIdx++; showQuestion(); }, 1500);
     }
 
     function endGame() {
         clearInterval(timerInterval); document.getElementById('game-ui').classList.add('hidden'); document.getElementById('result-screen').classList.remove('hidden');
         const win = enemyHp <= 0; const lose = playerHp <= 0;
-        let title = win ? "完全勝利" : (lose ? "敗北" : "無念");
-        let msg = win ? "歴史を極めし者なり！" : (lose ? "修行が足りぬようですぞ。" : "敵を倒しきれなかった。無念。");
-        document.getElementById('res-title').innerText = title; document.getElementById('res-msg').innerText = msg;
+        document.getElementById('res-title').innerText = win ? "完全勝利" : (lose ? "敗北" : "時間切れ");
+        document.getElementById('res-msg').innerText = win ? "見事なり！歴史を統べし者よ。" : "精進なされよ。道はまだ遠い。";
     }
 
-    // --- フラッシュカード関連 ---
     function startFlash() {
         document.getElementById('flash-ui').classList.remove('hidden');
         quizList = masterData.filter(q => (selectedEra === 'all' || q.era === selectedEra)).sort(() => Math.random() - 0.5);
@@ -262,8 +266,8 @@
 
     function nextFcStep() {
         fcStep++;
-        if (fcStep === 1) { playSound(seKey); document.getElementById('fc-goro').classList.remove('hidden'); }
-        else if (fcStep === 2) { playSound(seOk); document.getElementById('fc-event').classList.remove('hidden'); }
+        if (fcStep === 1) { document.getElementById('fc-goro').classList.remove('hidden'); }
+        else if (fcStep === 2) { document.getElementById('fc-event').classList.remove('hidden'); }
         else {
             currentIdx++;
             if (currentIdx < quizList.length) { showFcCard(); }
