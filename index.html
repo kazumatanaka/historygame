@@ -125,10 +125,24 @@
         /* 並び替えUI */
         #sort-ui { width: 100%; height: 100%; display: flex; flex-direction: column; background: #222; }
         #sort-header { padding: 10px; background: #333; text-align: center; font-weight: bold; color: #fff; display: flex; justify-content: space-between; align-items: center; z-index: 10; }
-        #sort-container { flex: 1; overflow-y: auto; padding: 20px 10px; position: relative; }
+        
+        /* 修正箇所: スクロール対応 */
+        #sort-container { 
+            flex: 1; 
+            overflow-y: auto; /* スクロール可能に */
+            padding: 20px 10px; 
+            position: relative; 
+            -webkit-overflow-scrolling: touch; /* 滑らかスクロール */
+        }
+        /* スクロールバー装飾 */
+        #sort-container::-webkit-scrollbar { width: 10px; }
+        #sort-container::-webkit-scrollbar-track { background: #222; }
+        #sort-container::-webkit-scrollbar-thumb { background: #555; border-radius: 5px; border: 1px solid #333; }
+        #sort-container::-webkit-scrollbar-thumb:hover { background: var(--primary); }
+
         .sort-item { background: #444; color: #fff; padding: 15px; margin-bottom: 8px; border-radius: 8px; font-size: 1.2rem; font-weight: bold; display: flex; justify-content: center; align-items: center; touch-action: none; border: 2px solid #555; position: relative; box-sizing: border-box; }
         .sort-placeholder { height: 60px; margin-bottom: 8px; border: 2px dashed #777; background: rgba(255, 255, 255, 0.1); border-radius: 8px; }
-        .drag-clone { position: fixed; pointer-events: none; z-index: 9999; background: var(--primary); color: #fff; padding: 15px; border-radius: 8px; font-size: 1.2rem; font-weight: bold; box-shadow: 0 10px 25px rgba(0,0,0,0.8); opacity: 0.9; transform: scale(1.05); display: flex; justify-content: center; align-items: center; border: 2px solid #fff; }
+        .drag-clone { position: fixed; pointer-events: none; z-index: 9999; background: var(--primary); color: #fff; padding: 15px; border-radius: 8px; font-size: 1.2rem; font-weight: bold; box-shadow: 0 10px 25px rgba(0,0,0,0.8); opacity: 0.9; transform: scale(1.05); display: flex; justify-content: center; align-items: center; border: 2px solid #fff; box-sizing: border-box; }
         .sort-item.invisible { display: none; }
         .sort-item.correct { border-color: #4caf50; background: #1b5e20; }
         .sort-item.wrong { border-color: #f44336; background: #b71c1c; }
@@ -534,68 +548,203 @@
         playSound('ok'); currentIdx++; showFcCard();
     }
 
-    // --- 並び替え ---
+    // --- 並び替え（機能強化版） ---
+    // 正解データ（令和まで）
     const correctOrder = ["旧石器", "縄文", "弥生", "古墳", "飛鳥", "奈良", "平安", "鎌倉", "南北朝", "室町", "安土桃山", "江戸", "明治", "大正", "昭和", "平成", "令和"];
-    let draggingItem = null, dragClone = null, placeholder = null, dragOffsetY = 0;
+    
+    let draggingItem = null;
+    let dragClone = null;
+    let placeholder = null;
+    let dragOffsetY = 0;
+    let dragOffsetX = 0; 
+    let autoScrollInterval = null; 
 
     function startSortGame() {
         document.getElementById('sort-ui').classList.remove('hidden');
+        // ランダムに並べる
         const shuffled = [...correctOrder].sort(() => Math.random() - 0.5);
         const container = document.getElementById('sort-container');
         container.innerHTML = "";
         shuffled.forEach(era => {
             const div = document.createElement('div');
-            div.className = 'sort-item'; div.innerText = era; div.dataset.val = era;
-            div.addEventListener('mousedown', onDragStart); div.addEventListener('touchstart', onDragStart, {passive: false});
+            div.className = 'sort-item';
+            div.innerText = era;
+            div.dataset.val = era;
+            // 受動的リスナーではないことを明示
+            div.addEventListener('mousedown', onDragStart);
+            div.addEventListener('touchstart', onDragStart, {passive: false});
             container.appendChild(div);
         });
     }
+
     function onDragStart(e) {
         if(e.target.tagName === 'BUTTON') return;
-        e.preventDefault();
-        const item = e.target.closest('.sort-item'); if(!item) return;
-        playSound('grab'); if(navigator.vibrate) navigator.vibrate(10);
+
+        // 2本指以上の操作（スクロール）ならドラッグ処理をしない
+        if (e.touches && e.touches.length > 1) {
+            return; 
+        }
+
+        e.preventDefault(); 
+        
+        const item = e.target.closest('.sort-item');
+        if(!item) return;
+
+        playSound('grab');
+        if(navigator.vibrate) navigator.vibrate(10);
+
         draggingItem = item;
         const rect = item.getBoundingClientRect();
+        
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        
         dragOffsetY = clientY - rect.top;
-        dragClone = item.cloneNode(true); dragClone.className = 'drag-clone';
-        dragClone.style.width = rect.width + 'px'; dragClone.style.height = rect.height + 'px';
-        dragClone.style.top = rect.top + 'px'; dragClone.style.left = rect.left + 'px';
+        dragOffsetX = clientX - rect.left;
+
+        dragClone = item.cloneNode(true);
+        dragClone.className = 'drag-clone';
+        dragClone.style.width = rect.width + 'px';
+        dragClone.style.height = rect.height + 'px';
+        dragClone.style.boxSizing = "border-box"; 
+        
+        updateClonePosition(clientX, clientY);
         document.body.appendChild(dragClone);
-        placeholder = document.createElement('div'); placeholder.className = 'sort-placeholder'; placeholder.style.height = rect.height + 'px';
-        item.parentNode.insertBefore(placeholder, item); item.classList.add('invisible');
-        document.addEventListener('mousemove', onDragMove); document.addEventListener('touchmove', onDragMove, {passive: false});
-        document.addEventListener('mouseup', onDragEnd); document.addEventListener('touchend', onDragEnd);
+
+        placeholder = document.createElement('div');
+        placeholder.className = 'sort-placeholder';
+        placeholder.style.height = rect.height + 'px';
+        
+        item.parentNode.insertBefore(placeholder, item);
+        item.classList.add('invisible');
+
+        document.addEventListener('mousemove', onDragMove);
+        document.addEventListener('touchmove', onDragMove, {passive: false});
+        document.addEventListener('mouseup', onDragEnd);
+        document.addEventListener('touchend', onDragEnd);
     }
+
+    function updateClonePosition(x, y) {
+        if(dragClone) {
+            dragClone.style.top = (y - dragOffsetY) + 'px';
+            dragClone.style.left = (x - dragOffsetX) + 'px';
+        }
+    }
+
     function onDragMove(e) {
-        if (!dragClone) return; e.preventDefault();
+        if (!dragClone) return;
+        
+        if (e.touches && e.touches.length > 1) {
+            onDragEnd(e);
+            return;
+        }
+
+        e.preventDefault();
+
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        dragClone.style.top = (clientY - dragOffsetY) + 'px'; dragClone.style.left = clientX + 'px';
-        const elemBelow = document.elementFromPoint(clientX, clientY); if (!elemBelow) return;
+
+        updateClonePosition(clientX, clientY);
+        checkAutoScroll(clientY); 
+
+        const elemBelow = document.elementFromPoint(clientX, clientY);
+        if (!elemBelow) return;
+
         const target = elemBelow.closest('.sort-item');
+
         if (target && target !== draggingItem && !target.classList.contains('invisible')) {
             const targetRect = target.getBoundingClientRect();
-            if (clientY < targetRect.top + targetRect.height / 2) {
-                if (placeholder.nextElementSibling !== target) { placeholder.parentNode.insertBefore(placeholder, target); playSound('pop'); }
+            const middleY = targetRect.top + targetRect.height / 2;
+
+            if (clientY < middleY) {
+                if (placeholder.nextElementSibling !== target) {
+                    placeholder.parentNode.insertBefore(placeholder, target);
+                    playSound('pop');
+                }
             } else {
-                if (placeholder.previousElementSibling !== target) { placeholder.parentNode.insertBefore(placeholder, target.nextElementSibling); playSound('pop'); }
+                if (placeholder.previousElementSibling !== target) {
+                    placeholder.parentNode.insertBefore(placeholder, target.nextElementSibling);
+                    playSound('pop');
+                }
             }
         }
     }
-    function onDragEnd(e) {
-        document.removeEventListener('mousemove', onDragMove); document.removeEventListener('touchmove', onDragMove);
-        document.removeEventListener('mouseup', onDragEnd); document.removeEventListener('touchend', onDragEnd);
-        if (draggingItem && placeholder) { placeholder.parentNode.insertBefore(draggingItem, placeholder); placeholder.remove(); draggingItem.classList.remove('invisible'); }
-        if (dragClone) { dragClone.remove(); dragClone = null; }
-        draggingItem = null; placeholder = null; playSound('key');
+
+    function checkAutoScroll(y) {
+        const container = document.getElementById('sort-container');
+        const rect = container.getBoundingClientRect();
+        const threshold = 60; 
+        const speed = 15;     
+
+        if (y < rect.top + threshold) {
+            startScroll(-speed);
+        } else if (y > rect.bottom - threshold) {
+            startScroll(speed);
+        } else {
+            stopScroll();
+        }
     }
+
+    function startScroll(amount) {
+        if (autoScrollInterval) return; 
+        autoScrollInterval = setInterval(() => {
+            const container = document.getElementById('sort-container');
+            container.scrollTop += amount;
+        }, 20); 
+    }
+
+    function stopScroll() {
+        if (autoScrollInterval) {
+            clearInterval(autoScrollInterval);
+            autoScrollInterval = null;
+        }
+    }
+
+    function onDragEnd(e) {
+        stopScroll(); 
+
+        document.removeEventListener('mousemove', onDragMove);
+        document.removeEventListener('touchmove', onDragMove);
+        document.removeEventListener('mouseup', onDragEnd);
+        document.removeEventListener('touchend', onDragEnd);
+
+        if (draggingItem && placeholder) {
+            placeholder.parentNode.insertBefore(draggingItem, placeholder);
+            placeholder.remove();
+            draggingItem.classList.remove('invisible');
+        }
+
+        if (dragClone) {
+            dragClone.remove();
+            dragClone = null;
+        }
+
+        draggingItem = null;
+        placeholder = null;
+        playSound('key');
+    }
+
     function checkSortOrder() {
-        const items = document.querySelectorAll('#sort-container .sort-item'); let correctCount = 0;
-        items.forEach((item, idx) => { if (item.dataset.val === correctOrder[idx]) { item.classList.add('correct'); item.classList.remove('wrong'); correctCount++; } else { item.classList.add('wrong'); item.classList.remove('correct'); } });
-        if (correctCount === correctOrder.length) { playSound('slash'); alert("見事！歴史の流れを完全に理解しています！"); } else { playSound('damage'); }
+        const items = document.querySelectorAll('#sort-container .sort-item');
+        let correctCount = 0;
+        
+        items.forEach((item, idx) => {
+            if (item.dataset.val === correctOrder[idx]) {
+                item.classList.add('correct');
+                item.classList.remove('wrong');
+                correctCount++;
+            } else {
+                item.classList.add('wrong');
+                item.classList.remove('correct');
+            }
+        });
+
+        if (correctCount === correctOrder.length) {
+            playSound('slash');
+            alert("見事！歴史の流れを完全に理解しています！");
+        } else {
+            playSound('damage');
+        }
     }
 </script>
 </body>
