@@ -126,15 +126,13 @@
         #sort-ui { width: 100%; height: 100%; display: flex; flex-direction: column; background: #222; }
         #sort-header { padding: 10px; background: #333; text-align: center; font-weight: bold; color: #fff; display: flex; justify-content: space-between; align-items: center; z-index: 10; }
         
-        /* 修正箇所: スクロール対応 */
         #sort-container { 
             flex: 1; 
-            overflow-y: auto; /* スクロール可能に */
+            overflow-y: auto; 
             padding: 20px 10px; 
             position: relative; 
-            -webkit-overflow-scrolling: touch; /* 滑らかスクロール */
+            -webkit-overflow-scrolling: touch;
         }
-        /* スクロールバー装飾 */
         #sort-container::-webkit-scrollbar { width: 10px; }
         #sort-container::-webkit-scrollbar-track { background: #222; }
         #sort-container::-webkit-scrollbar-thumb { background: #555; border-radius: 5px; border: 1px solid #333; }
@@ -333,6 +331,7 @@
 
     let mode = '', selectedEra = '', playerHp = 100, enemyHp = 100;
     let currentIdx = 0, quizList = [], userInput = "", timerInterval, fcStep = 0;
+    let damagePerHit = 20; // 1問あたりのダメージ
 
     window.onload = function() {
         if (typeof masterData === 'undefined') { alert('エラー: questions.js がありません'); return; }
@@ -452,7 +451,17 @@
         } else {
             quizList = baseList.sort(() => Math.random() - 0.5);
         }
+        
+        // 最大10問
         quizList = quizList.slice(0, 10);
+        
+        // ダメージ計算: 問題数が少ない場合でも全問正解で100以上になるように調整
+        if (quizList.length > 0) {
+            damagePerHit = Math.max(20, Math.ceil(100 / quizList.length));
+        } else {
+            damagePerHit = 20;
+        }
+
         playerHp = 100; enemyHp = 100; currentIdx = 0;
         updateHpUI(); showQuestion();
     }
@@ -490,7 +499,8 @@
         saveStat(quizList[currentIdx].id, correct, 'battle');
         if (correct) {
             playSound('slash'); slash.classList.remove('slash-anim'); void slash.offsetWidth; slash.classList.add('slash-anim');
-            enemyHp -= 20; display.style.color = "#4caf50";
+            enemyHp -= damagePerHit; // 計算されたダメージを与える
+            display.style.color = "#4caf50";
         } else {
             playSound('damage'); container.classList.add('damage-flash'); setTimeout(() => container.classList.remove('damage-flash'), 300);
             playerHp -= 25; display.style.color = "#f44336"; display.innerText = quizList[currentIdx].y;
